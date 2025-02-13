@@ -2,12 +2,10 @@ import base64
 import mimetypes
 import os.path
 import shutil
+import zipfile
 
 from email.message import EmailMessage
-from email.mime.audio import MIMEAudio
-from email.mime.base import MIMEBase
-from email.mime.image import MIMEImage
-from email.mime.text import MIMEText
+
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -22,13 +20,9 @@ SENDER_ADDRESS = "orderforward87@gmail.com"
 
 FILES_DIRECTORY_PATH="C:\\Users\\adria\\Desktop\\SALE FILES\\"
 ZIPS_DIRECTORY = "ZIPS\\"
+ORDER_DIRECTORY_PATH="C:\\Users\\adria\\Desktop\\ORDERS\\"
 
 DEBUG = True
-
-REMOVE_UNREAD_JSON_BODY = {
-  "addLabelIds": ["PROCESSED"],
-  "removeLabelIds": ["UNREAD"]
-}
 
 def main():
 
@@ -51,9 +45,10 @@ def main():
         if length > 0:
             for messageObject in messages:
                 message = service.users().messages().get(userId='me', id=messageObject.get('id')).execute()
-                messageText = get_body_text(message)
-                orderedItems = find_items(messageText)
-                send_message(service, orderedItems)
+                order_id = get_order_id(get_subject(message))
+                message_text = get_body_text(message)
+                ordered_items = find_items(message_text)
+                package_files(order_id, ordered_items)
                 mark_message_read(service, message)
 
     except HttpError as error:
@@ -80,7 +75,22 @@ def authorize():
     return creds
 
 def get_subject(message):
-    return message['payload']['headers'][21]['value']
+    headers = message['payload']['headers']
+    subject_header = {}
+    for h in headers:
+        if h['name'] == "Subject":
+            subject_header = h
+    subject = subject_header['value']
+    if DEBUG:
+        print(f'Found subject: {subject}')
+    return subject
+
+def get_order_id(subject_string: str):
+    numbers = [c for c in subject_string if c.isnumeric()]
+    order_id = "".join(numbers)
+    if DEBUG:
+        print(f'Found order id: {order_id}' )
+    return order_id
 
 def get_body_text(message):
     return base64.b64decode(message['payload']['parts'][0]['body']['data']).decode()
@@ -106,7 +116,16 @@ def find_items(text: str):
     return items
 
 def mark_message_read(service, message):
-    service.users().messages().modify(userId='me', id=message['id'], body=REMOVE_UNREAD_JSON_BODY).execute()
+    if DEBUG:
+        print("Marking message read")
+    request = service.users().labels().list(userId='me').execute()
+    labels = request['labels']
+    processed_label_id = [l for l in labels if l['name'] == "PROCESSED"][0]['id']
+    json_body = {
+        "addLabelIds": [processed_label_id],
+        "removeLabelIds": ["UNREAD"]
+    }
+    service.users().messages().modify(userId='me', id=message['id'], body=json_body).execute()
 
 def ensure_processed_exists(service):
     request = service.users().labels().list(userId='me').execute()
@@ -166,6 +185,31 @@ def attach_file(message, file):
     with open(file, "rb") as fp:
         attachment_data = fp.read()
     message.add_attachment(attachment_data, maintype, subtype, filename="testfile.zip")
+
+def package_files(order_id: str, files: list):
+    if DEBUG:
+        print(f'Packaging files for order {order_id}')
+    final_directory = os.path.join(ORDER_DIRECTORY_PATH, order_id + ".zip")
+    with zipfile.ZipFile(final_directory, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for file in files:
+            file_directory = os.path.join(FILES_DIRECTORY_PATH, file)
+            if os.path.exists(file_directory):
+                if DEBUG:
+                    print(f'Zipping files: {file}')
+                zipdir(file_directory, zip_file)
+            else:
+                print(f'Could not find files {file_directory}')
+    if DEBUG:
+        print("All files successfully compressed")
+
+
+def zipdir(path, ziph):
+    # ziph is zipfile handle
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            ziph.write(os.path.join(root, file),
+                       os.path.relpath(os.path.join(root, file),
+                                       os.path.join(path, '..')))
 
 if __name__ == "__main__":
   main()
