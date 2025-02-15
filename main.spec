@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['main.py'],
+    ['gui_test.py'],
     pathex=[],
     binaries=[],
     datas=[('credentials.json','.')],

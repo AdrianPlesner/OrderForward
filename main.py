@@ -15,9 +15,11 @@ from googleapiclient.errors import HttpError
 SCOPES = ["https://mail.google.com/"]
 DEBUG = True
 
-def main():
-    files_path = askdirectory(title="Angiv mappe der inderholder filer:")
-    output_path = askdirectory(title="Angiv destinations mappe")
+def main(files_path, output_path):
+    if files_path == "":
+        files_path = askdirectory(title="Angiv mappe der inderholder filer:")
+    if output_path == "":
+        output_path = askdirectory(title="Angiv destinations mappe")
 
     if DEBUG:
         print(f'Files path: {files_path}')
@@ -46,6 +48,7 @@ def main():
                 ordered_items = find_items(message_text)
                 package_files(order_id, ordered_items, files_path, output_path)
                 mark_message_read(service, message)
+        return length
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
@@ -208,7 +211,9 @@ def locate_file(files_path: str, file_name: str):
     root_path = os.path.join(files_path, file_name)
     in_root = os.path.exists(root_path)
     if in_root:
-        return
+        if DEBUG:
+            print(f'File found in root')
+        return root_path
 
     number = int(file_name[1:])
     rem = number % 50
@@ -231,4 +236,4 @@ def zipdir(path, ziph):
                                        os.path.join(path, '..')))
 
 if __name__ == "__main__":
-  main()
+  main("","")
