@@ -1,6 +1,8 @@
 import tkinter as tk
 import os
 from tkinter.filedialog import askdirectory
+
+import gmail_utils
 import main
 
 DIRECTORY_LABEL_PREFIX = "FILER PLACERING:\t"
@@ -32,8 +34,15 @@ def run_main():
         error_label['text'] += "ORDRER PLACERING UGYLDIG!\t"
 
     if files_valid and orders_valid:
-        orders_processed = main.main(files_directory, order_directory)
-        orders_processed_label['text'] = f'{orders_processed} order behandlet!'
+        service = None
+        try:
+            service = gmail_utils.get_service()
+            orders_processed = main.main(service, files_directory, order_directory)
+            orders_processed_label['text'] = f'{orders_processed} order behandlet!'
+        except Exception as e:
+            error_label['text'] = "Der skete en fejl under ordre behandlingen prøv igen!"
+            if service is not None:
+                gmail_utils.send_message(service, e)
 
 
 root = tk.Tk()
