@@ -1,5 +1,7 @@
 import base64
+import json
 import os.path
+import tempfile
 import zipfile
 
 from tkinter.filedialog import askdirectory
@@ -116,7 +118,6 @@ def locate_file(files_path: str, file_name: str):
         print(f'Could not locate {file_name} in {files_path} or {subdir}')
         raise Exception(f"File not found {file_name}")
 
-
 def zipdir(path, ziph):
     # ziph is zipfile handle
     for root, dirs, files in os.walk(path):
@@ -125,5 +126,34 @@ def zipdir(path, ziph):
                        os.path.relpath(os.path.join(root, file),
                                        os.path.join(path, '..')))
 
-if __name__ == "__main__":
-  main("","")
+def check_for_path():
+    path = os.path.join(tempfile.gettempdir(),"OrderForwardPaths.dat")
+    if os.path.exists(path):
+        try:
+            with open(path, 'r') as json_file:
+                paths = json.load(json_file)
+                return paths
+        except Exception as e:
+            os.remove(path)
+            return None
+    else:
+        return None
+
+def update_files_path(new_path: str):
+    path = os.path.join(tempfile.gettempdir(), "OrderForwardPaths.dat")
+    saved = check_for_path()
+    if saved is None:
+        saved = {}
+    saved['files'] = new_path
+    with open(path, 'w') as file:
+        json.dump(saved, file)
+
+def update_orders_path(new_path: str):
+    path = os.path.join(tempfile.gettempdir(), "OrderForwardPaths.dat")
+    saved = check_for_path()
+    if saved is None:
+        saved = {}
+    saved['orders'] = new_path
+    with open(path, 'w') as file:
+        json.dump(saved, file)
+

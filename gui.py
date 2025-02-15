@@ -17,12 +17,14 @@ def update_directory():
     new_dir = askdirectory(title="Angiv mappe der inderholder filer:")
     files_directory = new_dir
     directory_label['text'] = DIRECTORY_LABEL_PREFIX + new_dir
+    main.update_files_path(new_dir)
 
 def update_order_directory():
     global order_directory
     new_dir = askdirectory(title="Angiv destinations mappe")
     order_directory = new_dir
     order_label['text'] = OUTPUT_DIRECTORY_PREFIX + new_dir
+    main.update_orders_path(new_dir)
 
 def run_main():
     error_label['text'] = ""
@@ -53,8 +55,17 @@ root.geometry("300x300+50+50")
 
 tk.Label(root, text="Velkommen til ordrepaknings programmet!").pack()
 
-current_files_directory = DIRECTORY_LABEL_PREFIX + INGEN_MAPPE_VALGT
-current_order_directory = OUTPUT_DIRECTORY_PREFIX + INGEN_MAPPE_VALGT
+saved_paths = main.check_for_path()
+
+current_files_directory = DIRECTORY_LABEL_PREFIX
+current_order_directory = OUTPUT_DIRECTORY_PREFIX
+
+if saved_paths is None:
+    current_files_directory += INGEN_MAPPE_VALGT
+    current_order_directory += INGEN_MAPPE_VALGT
+else:
+    current_files_directory += saved_paths['files']
+    current_order_directory += saved_paths['orders']
 
 files_frame = tk.Frame(root)
 
