@@ -13,14 +13,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 SCOPES = ["https://mail.google.com/"]
-
-RECIPIENT_ADDRESS = "nicklashinge@gmail.com"
-SENDER_ADDRESS = "orderforward87@gmail.com"
-
-FILES_DIRECTORY_PATH="C:\\Users\\adria\\Desktop\\SALE FILES\\"
-ZIPS_DIRECTORY = "ZIPS\\"
-ORDER_DIRECTORY_PATH="C:\\Users\\adria\\Desktop\\ORDERS\\"
-
 DEBUG = True
 
 def main():
@@ -156,52 +148,52 @@ def ensure_processed_exists(service):
             # TODO(developer) - Handle errors from gmail API.
             print(f"An error occurred: {error}")
 
-def send_message(service, items: list):
-    email = EmailMessage()
-    email.set_content("Testy test")
+# def send_message(service, items: list):
+#     email = EmailMessage()
+#     email.set_content("Testy test")
+#
+#     email['To'] = RECIPIENT_ADDRESS
+#     email['From'] = SENDER_ADDRESS
+#     email['Subject'] = "test subject"
+#
+#     for item in items:
+#         file_path = get_file(item)
+#         attach_file(email, file_path)
+#
+#     encoded_email = base64.urlsafe_b64encode(email.as_bytes()).decode()
+#     json_message = {"message": {"raw": encoded_email}}
+#     try:
+#         draft = service.users().drafts().create(userId='me', body=json_message).execute()
+#         service.users().drafts().send(userId='me', body=draft).execute()
+#         print('Email sent successfully')
+#     except HttpError as error:
+#         print(f"An error occurred: {error}")
 
-    email['To'] = RECIPIENT_ADDRESS
-    email['From'] = SENDER_ADDRESS
-    email['Subject'] = "test subject"
+# def get_file(file_id: str):
+#     file_path = FILES_DIRECTORY_PATH + ZIPS_DIRECTORY + file_id
+#     extension = ".zip"
+#     exists = os.path.exists(file_path + extension)
+#     if not exists:
+#         directory_path = FILES_DIRECTORY_PATH + file_id
+#         shutil.make_archive(file_path, 'zip', directory_path)
+#     return file_path + extension
 
-    for item in items:
-        file_path = get_file(item)
-        attach_file(email, file_path)
-
-    encoded_email = base64.urlsafe_b64encode(email.as_bytes()).decode()
-    json_message = {"message": {"raw": encoded_email}}
-    try:
-        draft = service.users().drafts().create(userId='me', body=json_message).execute()
-        service.users().drafts().send(userId='me', body=draft).execute()
-        print('Email sent successfully')
-    except HttpError as error:
-        print(f"An error occurred: {error}")
-
-def get_file(file_id: str):
-    file_path = FILES_DIRECTORY_PATH + ZIPS_DIRECTORY + file_id
-    extension = ".zip"
-    exists = os.path.exists(file_path + extension)
-    if not exists:
-        directory_path = FILES_DIRECTORY_PATH + file_id
-        shutil.make_archive(file_path, 'zip', directory_path)
-    return file_path + extension
-
-def attach_file(message, file):
-    if DEBUG:
-        print(f'Attaching file: {file}')
-    type_subtype, _ = mimetypes.guess_type(file)
-    maintype, subtype = type_subtype.split("/")
-    with open(file, "rb") as fp:
-        attachment_data = fp.read()
-    message.add_attachment(attachment_data, maintype, subtype, filename="testfile.zip")
+# def attach_file(message, file):
+#     if DEBUG:
+#         print(f'Attaching file: {file}')
+#     type_subtype, _ = mimetypes.guess_type(file)
+#     maintype, subtype = type_subtype.split("/")
+#     with open(file, "rb") as fp:
+#         attachment_data = fp.read()
+#     message.add_attachment(attachment_data, maintype, subtype, filename="testfile.zip")
 
 def package_files(order_id: str, files: list, files_path, output_path):
     if DEBUG:
         print(f'Packaging files for order {order_id}')
-    final_directory = os.path.join(ORDER_DIRECTORY_PATH, order_id + ".zip")
+    final_directory = os.path.join(output_path, order_id + ".zip")
     with zipfile.ZipFile(final_directory, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for file in files:
-            file_directory = os.path.join(FILES_DIRECTORY_PATH, file)
+            file_directory = locate_file(files_path, file)
             if os.path.exists(file_directory):
                 if DEBUG:
                     print(f'Zipping files: {file}')
@@ -210,6 +202,24 @@ def package_files(order_id: str, files: list, files_path, output_path):
                 print(f'Could not find files {file_directory}')
     if DEBUG:
         print("All files successfully compressed")
+
+
+def locate_file(files_path: str, file_name: str):
+    root_path = os.path.join(files_path, file_name)
+    in_root = os.path.exists(root_path)
+    if in_root:
+        return
+
+    number = int(file_name[1:])
+    rem = number % 50
+    min = number - rem + 1
+    max = min + 49
+    subdir = f'#{min}-#{max}'
+    subpath = os.path.join(files_path, subdir,file_name)
+    if os.path.exists(subpath):
+        return subpath
+    else:
+        print(f'Could not locate {file_name} in {files_path} or {subdir}')
 
 
 def zipdir(path, ziph):
