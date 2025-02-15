@@ -5,8 +5,7 @@ import shutil
 import zipfile
 
 from email.message import EmailMessage
-
-
+from tkinter.filedialog import askdirectory
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -25,7 +24,12 @@ ORDER_DIRECTORY_PATH="C:\\Users\\adria\\Desktop\\ORDERS\\"
 DEBUG = True
 
 def main():
+    files_path = askdirectory(title="Angiv mappe der inderholder filer:")
+    output_path = askdirectory(title="Angiv destinations mappe")
 
+    if DEBUG:
+        print(f'Files path: {files_path}')
+        print(f'Orders path: {output_path}')
     creds = authorize()
     try:
         # Call the Gmail API
@@ -48,7 +52,7 @@ def main():
                 order_id = get_order_id(get_subject(message))
                 message_text = get_body_text(message)
                 ordered_items = find_items(message_text)
-                package_files(order_id, ordered_items)
+                package_files(order_id, ordered_items, files_path, output_path)
                 mark_message_read(service, message)
 
     except HttpError as error:
@@ -57,22 +61,27 @@ def main():
 
 
 def authorize():
-    creds = None
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    try:
+        creds = None
+        token_path = os.path.abspath(os.path.join(os.path.dirname(__file__),"token.json"))
+        credentials_path = os.path.abspath(os.path.join(os.path.dirname(__file__),"credentials.json"))
+        if os.path.exists(token_path):
+            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES
-            )
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open("token.json", "w") as token:
-            token.write(creds.to_json())
-    return creds
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    credentials_path, SCOPES
+                )
+                creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open(token_path, "w") as token:
+                token.write(creds.to_json())
+        return creds
+    except Exception as e:
+        print(e)
 
 def get_subject(message):
     headers = message['payload']['headers']
@@ -112,7 +121,7 @@ def find_items(text: str):
         if len(item) > 0:
             items.append('#' + item)
     if DEBUG:
-        print(items)
+        print(f'Found items in order: {items}')
     return items
 
 def mark_message_read(service, message):
@@ -186,7 +195,7 @@ def attach_file(message, file):
         attachment_data = fp.read()
     message.add_attachment(attachment_data, maintype, subtype, filename="testfile.zip")
 
-def package_files(order_id: str, files: list):
+def package_files(order_id: str, files: list, files_path, output_path):
     if DEBUG:
         print(f'Packaging files for order {order_id}')
     final_directory = os.path.join(ORDER_DIRECTORY_PATH, order_id + ".zip")
