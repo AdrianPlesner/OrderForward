@@ -99,23 +99,18 @@ def package_files(order_id: str, files: list, files_path, output_path):
         raise e
 
 def locate_file(files_path: str, file_name: str):
-    root_path = os.path.join(files_path, file_name)
-    in_root = os.path.exists(root_path)
-    if in_root:
-        if DEBUG:
-            print(f'File found in root')
-        return root_path
+    roots = [x[0] for x in os.walk(files_path)]
+    path_to_find = ""
+    for path in roots:
+        parts = path.split('\\')
+        if parts[-1] == file_name:
+            path_to_find = parts[-1]
+            break
 
-    number = int(file_name[1:])
-    rem = number % 50
-    min = number - rem + 1
-    max = min + 49
-    subdir = f'#{min}-#{max}'
-    subpath = os.path.join(files_path, subdir,file_name)
-    if os.path.exists(subpath):
-        return subpath
+    if path_to_find is not "" :
+        return path_to_find
     else:
-        print(f'Could not locate {file_name} in {files_path} or {subdir}')
+        print(f'Could not locate {file_name} in {files_path}')
         raise Exception(f"File not found {file_name}")
 
 def zipdir(path, ziph):
