@@ -3,6 +3,7 @@ import os
 import tempfile
 from email.message import EmailMessage
 
+import google
 from googleapiclient.errors import HttpError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -11,6 +12,8 @@ from googleapiclient.discovery import build
 
 
 SCOPES = ["https://mail.google.com/"]
+TOKEN_PATH = os.path.join(tempfile.gettempdir(), "OrderForwardToken.json")
+CREDENTIALS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "credentials.json"))
 
 def send_message(service, error: Exception):
     email = EmailMessage()
@@ -32,29 +35,43 @@ def send_message(service, error: Exception):
         print(f"An error occurred: {error}")
 
 
-def authorize():
+def authorize() -> google.oauth2.credentials.Credentials:
     try:
-        creds = None
-        token_path = os.path.join(tempfile.gettempdir(),"OrderForwardToken.json")
-        credentials_path = os.path.abspath(os.path.join(os.path.dirname(__file__),"credentials.json"))
-        if os.path.exists(token_path):
-            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
-
+        creds = check_credentials()
         if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    credentials_path, SCOPES
-                )
-                creds = flow.run_local_server(port=0)
-            # Save the credentials for the next run
-            with open(token_path, "w") as token:
-                token.write(creds.to_json())
+            creds = validate_credentials(creds)
         return creds
     except Exception as e:
         print(e)
         raise e
+
+def check_credentials() -> google.oauth2.credentials.Credentials:
+    creds = None
+    if os.path.exists(TOKEN_PATH):
+        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+    return creds
+
+def validate_credentials(creds: google.oauth2.credentials.Credentials):
+    try:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                CREDENTIALS_PATH, SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open(TOKEN_PATH, "w") as token:
+            token.write(creds.to_json())
+        return creds
+    except Exception as e:
+        print(e)
+        return None
+
+
+def delete_token():
+    if os.path.exists(TOKEN_PATH):
+        os.remove(TOKEN_PATH)
 
 def get_service():
     creds = authorize()
@@ -106,6 +123,10 @@ def mark_message_read(service, message, debug=False):
         "removeLabelIds": ["UNREAD"]
     }
     service.users().messages().modify(userId='me', id=message['id'], body=json_body).execute()
+
+def get_user_address(service):
+    request = service.users().getProfile(userId='me').execute()
+    return request['emailAddress']
 
 # def get_file(file_id: str):
 #     file_path = FILES_DIRECTORY_PATH + ZIPS_DIRECTORY + file_id

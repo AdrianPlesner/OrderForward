@@ -4,13 +4,12 @@ from tkinter.filedialog import askdirectory
 
 import gmail_utils
 import main
+from connection_status_widget import ConnectionStatusWidget
+from request_access_widget import RequestAccessWidget
 
 DIRECTORY_LABEL_PREFIX = "FILER PLACERING:\t"
 OUTPUT_DIRECTORY_PREFIX = "ORDRE PLACRING:\t"
 INGEN_MAPPE_VALGT = "Ingen mappe valgt!"
-
-files_directory = ""
-order_directory = ""
 
 def update_directory():
     global files_directory
@@ -38,7 +37,7 @@ def run_main():
     if files_valid and orders_valid:
         service = None
         try:
-            service = gmail_utils.get_service()
+            service = connection_status_widget.get_service()
             orders_processed = main.main(service, files_directory, order_directory)
             orders_processed_label['text'] = f'{orders_processed} order behandlet!'
         except Exception as e:
@@ -53,9 +52,17 @@ root.minsize(1024, 512)
 root.geometry("300x300+50+50")
 
 
-tk.Label(root, text="Velkommen til ordrepaknings programmet!").pack()
+tk.Label(root, text="Velkommen til ordrepaknings programmet!").pack(pady=24)
+
+connection_status_widget = ConnectionStatusWidget(root)
+connection_status_widget.pack(pady=8)
+
+#request_access_widget = RequestAccessWidget(root)
+#request_access_widget.pack(pady=8)
 
 saved_paths = main.check_for_path()
+files_directory = saved_paths['files']
+order_directory = saved_paths['orders']
 
 current_files_directory = DIRECTORY_LABEL_PREFIX
 current_order_directory = OUTPUT_DIRECTORY_PREFIX
@@ -73,7 +80,7 @@ directory_label = tk.Label(files_frame, text=current_files_directory)
 directory_label.grid(row=0, column=0)
 get_directory_button = tk.Button(files_frame, text="Vælg mappe", command=update_directory)
 get_directory_button.grid(row=0, column=1)
-files_frame.pack()
+files_frame.pack(pady=8)
 
 order_frame = tk.Frame(root)
 
@@ -81,14 +88,14 @@ order_label = tk.Label(order_frame, text=current_order_directory)
 order_label.grid(row=0, column=0)
 get_order_button = tk.Button(order_frame, text="Vælg mappe", command=update_order_directory)
 get_order_button.grid(row=0, column=1)
-order_frame.pack()
+order_frame.pack(pady=8)
 
 run = tk.Button(root, text="Hent ordrer!", command=run_main)
 run.pack()
 error_label = tk.Label(root, text="", fg="red")
-error_label.pack()
+error_label.pack(pady=8)
 
 orders_processed_label = tk.Label(root, text="", fg="green")
-orders_processed_label.pack()
+orders_processed_label.pack(pady=8)
 
 root.mainloop()

@@ -107,7 +107,7 @@ def locate_file(files_path: str, file_name: str):
             path_to_find = parts[-1]
             break
 
-    if path_to_find is not "" :
+    if path_to_find != "" :
         return path_to_find
     else:
         print(f'Could not locate {file_name} in {files_path}')
