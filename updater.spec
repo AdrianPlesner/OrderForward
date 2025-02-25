@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['gui.py'],
+    ['updater.py'],
     pathex=[],
-    binaries=[('OrderForwardUpdater.exe','.')],
-    datas=[('credentials.json','.')],
+    binaries=[],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -23,7 +23,7 @@ exe = EXE(
     a.datas,
     [],
     exclude_binaries=False,
-    name='OrderForward',
+    name='OrderForwardUpdater',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

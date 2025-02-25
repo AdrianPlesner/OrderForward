@@ -4,8 +4,9 @@ from tkinter.filedialog import askdirectory
 
 import gmail_utils
 import main
+import update_handler
 from connection_status_widget import ConnectionStatusWidget
-from request_access_widget import RequestAccessWidget
+from update_handler import UpdateHandler
 
 DIRECTORY_LABEL_PREFIX = "FILER PLACERING:\t"
 OUTPUT_DIRECTORY_PREFIX = "ORDRE PLACRING:\t"
@@ -24,6 +25,10 @@ def update_order_directory():
     order_directory = new_dir
     order_label['text'] = OUTPUT_DIRECTORY_PREFIX + new_dir
     main.update_orders_path(new_dir)
+
+def check_for_update(handler: UpdateHandler):
+    if handler.exists_newer_tag():
+        handler.open_dialog()
 
 def run_main():
     error_label['text'] = ""
@@ -47,12 +52,15 @@ def run_main():
 
 
 root = tk.Tk()
-root.title("Order Forward")
+root.title(f"Order Forward v{update_handler.CURRENT_VERSION}")
 root.minsize(1024, 512)
 root.geometry("300x300+50+50")
 
 
 tk.Label(root, text="Velkommen til ordrepaknings programmet!").pack(pady=24)
+
+update_handler = UpdateHandler(root)
+
 
 connection_status_widget = ConnectionStatusWidget(root)
 connection_status_widget.pack(pady=8)
@@ -98,4 +106,7 @@ error_label.pack(pady=8)
 orders_processed_label = tk.Label(root, text="", fg="green")
 orders_processed_label.pack(pady=8)
 
+root.after_idle(check_for_update, update_handler)
 root.mainloop()
+
+
