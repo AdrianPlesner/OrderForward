@@ -5,7 +5,7 @@ a = Analysis(
     ['src/gui.py'],
     pathex=[],
     binaries=[('OrderForwardUpdater.exe','.')],
-    datas=[('credentials.json','.')],
+    datas=[('src/credentials.json','.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
