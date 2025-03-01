@@ -1,0 +1,7 @@
+build/
+dist/
+.idea/
+
+src/credentials.json
+token.json
+OrderForwardUpdater.exe
