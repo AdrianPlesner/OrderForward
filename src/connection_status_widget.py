@@ -1,5 +1,5 @@
 import tkinter as tk
-from gmail_utils import *
+from src.gmail_utils import *
 
 class ConnectionStatusWidget(tk.Frame):
     disconnected_label = "IKKE FORBUNDET!"

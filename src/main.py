@@ -123,16 +123,14 @@ def zipdir(path, ziph):
 
 def check_for_path():
     path = os.path.join(tempfile.gettempdir(),"OrderForwardPaths.dat")
+    paths = {'files': "", 'orders': ""}
     if os.path.exists(path):
         try:
             with open(path, 'r') as json_file:
                 paths = json.load(json_file)
-                return paths
         except Exception as e:
             os.remove(path)
-            return None
-    else:
-        return None
+    return paths
 
 def update_files_path(new_path: str):
     path = os.path.join(tempfile.gettempdir(), "OrderForwardPaths.dat")

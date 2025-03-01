@@ -3,7 +3,7 @@ import os
 from tkinter.filedialog import askdirectory
 
 import gmail_utils
-import main
+from src import main
 import update_handler
 from connection_status_widget import ConnectionStatusWidget
 from update_handler import UpdateHandler
