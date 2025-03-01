@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['gui.py'],
+    ['src/gui.py'],
     pathex=[],
     binaries=[('OrderForwardUpdater.exe','.')],
     datas=[('credentials.json','.')],

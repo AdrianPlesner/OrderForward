@@ -7,7 +7,7 @@ import urllib.request
 
 import requests
 
-CURRENT_VERSION = "1.3"
+CURRENT_VERSION = "1.4"
 GITHUB_RELEASE_URL = "https://api.github.com/repos/AdrianPlesner/OrderForward/releases/latest"
 
 class UpdateHandler(tk.Frame):

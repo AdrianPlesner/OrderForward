@@ -6,7 +6,7 @@ import zipfile
 
 from tkinter.filedialog import askdirectory
 from googleapiclient.errors import HttpError
-from gmail_utils import get_subject, ensure_processed_exists, mark_message_read
+from src.gmail_utils import get_subject, ensure_processed_exists, mark_message_read
 
 DEBUG = True
 
@@ -37,10 +37,12 @@ def main(service, files_path, output_path):
             for messageObject in messages:
                 message = service.users().messages().get(userId='me', id=messageObject.get('id')).execute()
                 order_id = get_order_id(get_subject(message))
-                message_text = get_body_text(message)
-                ordered_items = find_items(message_text)
-                package_files(order_id, ordered_items, files_path, output_path)
-                mark_message_read(service, message, DEBUG)
+                if len(order_id) > 0:
+                    message_text = get_body_text(message)
+                    ordered_items = find_items(message_text)
+                    if len(ordered_items) > 0:
+                        package_files(order_id, ordered_items, files_path, output_path)
+                        mark_message_read(service, message, DEBUG)
         return length
 
     except HttpError as error:

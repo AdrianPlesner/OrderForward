@@ -2,11 +2,9 @@ import tkinter as tk
 import os
 from tkinter.filedialog import askdirectory
 
-import gmail_utils
-from src import main
-import update_handler
-from connection_status_widget import ConnectionStatusWidget
-from update_handler import UpdateHandler
+from src import main, gmail_utils
+from src.connection_status_widget import ConnectionStatusWidget
+from src.update_handler import UpdateHandler, CURRENT_VERSION
 
 DIRECTORY_LABEL_PREFIX = "FILER PLACERING:\t"
 OUTPUT_DIRECTORY_PREFIX = "ORDRE PLACRING:\t"
@@ -52,7 +50,7 @@ def run_main():
 
 
 root = tk.Tk()
-root.title(f"Order Forward v{update_handler.CURRENT_VERSION}")
+root.title(f"Order Forward v{CURRENT_VERSION}")
 root.minsize(1024, 512)
 root.geometry("300x300+50+50")
 
