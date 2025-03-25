@@ -106,7 +106,7 @@ def locate_file(files_path: str, file_name: str):
     for path in roots:
         parts = path.split('\\')
         if parts[-1] == file_name:
-            path_to_find = parts[-1]
+            path_to_find = path
             break
 
     if path_to_find != "" :
