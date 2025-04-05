@@ -1,5 +1,6 @@
 import tkinter as tk
 from src.gmail_utils import *
+from src.simply_mail_utils import *
 
 MAIL_OPTIONS = ["Gmail", "simply"]
 
@@ -69,6 +70,7 @@ class ConnectionStatusWidget(tk.Frame):
                 self.creds = validate_credentials(self.creds)
                 self.connected = self.creds is not None and self.creds.valid
             case "simply":
+                connect_imap(self.get_credentials_dialog)
                 pass
         self.update_status(self.connected)
 
@@ -82,3 +84,16 @@ class ConnectionStatusWidget(tk.Frame):
         if self.service is None:
             self.establish_connection()
         return self.service
+
+    def get_credentials_dialog(self):
+        d = tk.Toplevel(self.master)
+        d.geometry("256x128")
+        label = tk.Label(d, text="Indtast email adresse og password for simply konto:")
+
+        credentials_frame = tk.Frame(d)
+        user_label = tk.Label(credentials_frame,text="Email:")
+        #TODO: get username and password from entry field and validate
+        login_btn = tk.Button(d, text="Login")
+
+        label.pack()
+        d.attributes("-topmost", True)
