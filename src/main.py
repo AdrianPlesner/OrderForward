@@ -32,7 +32,7 @@ def main(service, files_path, output_path):
         else:
             length = len(messages)
             print(f'Number of unread messages: {length}')
-
+        processed = 0
         if length > 0:
             for messageObject in messages:
                 message = service.users().messages().get(userId='me', id=messageObject.get('id')).execute()
@@ -43,7 +43,8 @@ def main(service, files_path, output_path):
                     if len(ordered_items) > 0:
                         package_files(order_id, ordered_items, files_path, output_path)
                         mark_message_read(service, message, DEBUG)
-        return length
+                        processed += 1
+        return processed
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
