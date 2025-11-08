@@ -51,21 +51,22 @@ def main(service, files_path, output_path):
         else:
             length = len(messages_to_process)
             print(f'Number of unread messages: {length}')
+        processed = 0
 
-
-            for message in messages_to_process:
-                order_id = get_order_id(get_subject(message))
-                if len(order_id) > 0:
-                    try:
-                        message_text = get_body_text(message)
-                        ordered_items = find_items(message_text)
-                        if len(ordered_items) > 0:
-                            package_files(order_id, ordered_items, files_path, output_path)
-                            mark_message_read(service, message, DEBUG)
-                    except HttpError as error:
-                        print(f'An error orrurred while processing order {order_id}')
-                        errors += 0
-        return length, errors
+        for message in messages_to_process:
+            order_id = get_order_id(get_subject(message))
+            if len(order_id) > 0:
+                try:
+                    message_text = get_body_text(message)
+                    ordered_items = find_items(message_text)
+                    if len(ordered_items) > 0:
+                        package_files(order_id, ordered_items, files_path, output_path)
+                        mark_message_read(service, message, DEBUG)
+                        processed += 1
+                except HttpError as error:
+                    print(f'An error orrurred while processing order {order_id}')
+                    errors += 0
+        return processed, errors
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
