@@ -6,7 +6,7 @@ import zipfile
 
 from tkinter.filedialog import askdirectory
 from googleapiclient.errors import HttpError
-from src.gmail_utils import get_subject, ensure_processed_exists, mark_message_read
+from src.gmail_utils import get_subject, ensure_processed_exists, mark_message_read, mark_message_processed
 
 DEBUG = True
 
@@ -21,30 +21,52 @@ def main(service, files_path, output_path):
         print(f'Orders path: {output_path}')
     try:
         # Call the Gmail API
+        messages_to_process = []
+        max_process_count = 10
         ensure_processed_exists(service)
-        results = service.users().messages().list(userId="me", maxResults=25, q="is:unread").execute()
+        results = service.users().messages().list(userId="me", maxResults=10, q="is:unread&+Eventyrprint").execute()
+        next_page_token = results.get("nextPageToken")
         messages = results.get("messages")
-
-        length = 0
-
-        if messages is None:
-            print('No new messages')
-        else:
-            length = len(messages)
-            print(f'Number of unread messages: {length}')
-        processed = 0
-        if length > 0:
+        flag = True
+        while flag and len(messages_to_process) < max_process_count and messages is not None and len(messages) > 0:
             for messageObject in messages:
                 message = service.users().messages().get(userId='me', id=messageObject.get('id')).execute()
                 order_id = get_order_id(get_subject(message))
                 if len(order_id) > 0:
+                    messages_to_process.append(message)
+                else:
+                    mark_message_processed(service, message, DEBUG)
+            if next_page_token is None:
+                flag = False
+            else:
+                results = service.users().messages().list(userId="me", maxResults=10, q="is:unread", pageToken=next_page_token).execute()
+                next_page_token = results.get("nextPageToken")
+                messages = results.get("messages")
+
+        length = 0
+        errors = 0
+
+        if len(messages_to_process) == 0:
+            print('No new messages')
+        else:
+            length = len(messages_to_process)
+            print(f'Number of unread messages: {length}')
+        processed = 0
+
+        for message in messages_to_process:
+            order_id = get_order_id(get_subject(message))
+            if len(order_id) > 0:
+                try:
                     message_text = get_body_text(message)
                     ordered_items = find_items(message_text)
                     if len(ordered_items) > 0:
                         package_files(order_id, ordered_items, files_path, output_path)
                         mark_message_read(service, message, DEBUG)
                         processed += 1
-        return processed
+                except HttpError as error:
+                    print(f'An error orrurred while processing order {order_id}')
+                    errors += 0
+        return processed, errors
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
@@ -52,11 +74,13 @@ def main(service, files_path, output_path):
         raise error
 
 def get_order_id(subject_string: str):
-    numbers = [c for c in subject_string if c.isnumeric()]
-    order_id = "".join(numbers)
-    if DEBUG:
-        print(f'Found order id: {order_id}' )
-    return order_id
+    if "Din ordre nr." in subject_string:
+        numbers = [c for c in subject_string if c.isnumeric()]
+        order_id = "".join(numbers)
+        if DEBUG:
+            print(f'Found order id: {order_id}' )
+        return order_id
+    return ""
 
 def get_body_text(message):
     return base64.b64decode(message['payload']['parts'][0]['body']['data']).decode()

@@ -41,8 +41,10 @@ def run_main():
         service = None
         try:
             service = connection_status_widget.get_service()
-            orders_processed = main.main(service, files_directory, order_directory)
+            orders_processed, errors_occurred = main.main(service, files_directory, order_directory)
             orders_processed_label['text'] = f'{orders_processed} order behandlet!'
+            if errors_occurred > 0:
+                error_label['text'] = f"Der skete fejl ved {errors_occurred} ordrer."
         except Exception as e:
             error_label['text'] = "Der skete en fejl under ordre behandlingen prøv igen!"
             if service is not None:

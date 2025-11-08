@@ -124,6 +124,17 @@ def mark_message_read(service, message, debug=False):
     }
     service.users().messages().modify(userId='me', id=message['id'], body=json_body).execute()
 
+def mark_message_processed(service, message, debug=False):
+    if debug:
+        print("Marking message processed")
+    request = service.users().labels().list(userId='me').execute()
+    labels = request['labels']
+    processed_label_id = [l for l in labels if l['name'] == "PROCESSED"][0]['id']
+    json_body = {
+        "addLabelIds": [processed_label_id],
+    }
+    service.users().messages().modify(userId='me', id=message['id'], body=json_body).execute()
+
 def get_user_address(service):
     request = service.users().getProfile(userId='me').execute()
     return request['emailAddress']
